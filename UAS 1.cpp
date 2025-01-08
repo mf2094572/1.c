@@ -1,59 +1,101 @@
 #include <iostream>
+#include <queue>
+#include <unordered_map>
 #include <vector>
-#include <algorithm> // Untuk std::sort
+using namespace std;
 
-// Fungsi Linear Search
-int linearSearch(const std::vector<int>& arr, int target) {
-    for (size_t i = 0; i < arr.size(); ++i) {
-        if (arr[i] == target) {
-            return i; // Mengembalikan indeks jika ditemukan
-        }
+
+struct Node {
+    char ch;
+    int freq;
+    Node *left, *right;
+
+    Node(char c, int f) : ch(c), freq(f), left(nullptr), right(nullptr) {}
+};
+
+
+struct Compare {
+    bool operator()(Node* a, Node* b) {
+        return a->freq > b->freq;
     }
-    return -1; // Mengembalikan -1 jika tidak ditemukan
+};
+
+
+Node* buildHuffmanTree(const string& input) {
+    unordered_map<char, int> freqMap;
+    for (char ch : input) freqMap[ch]++;
+
+    priority_queue<Node*, vector<Node*>, Compare> pq;
+    for (auto& pair : freqMap) {
+        pq.push(new Node(pair.first, pair.second));
+    }
+
+    while (pq.size() > 1) {
+        Node* left = pq.top(); pq.pop();
+        Node* right = pq.top(); pq.pop();
+        Node* combined = new Node('\0', left->freq + right->freq);
+        combined->left = left;
+        combined->right = right;
+        pq.push(combined);
+    }
+
+    return pq.top();
 }
 
-// Fungsi Binary Search
-int binarySearch(const std::vector<int>& arr, int target) {
-    int left = 0;
-    int right = arr.size() - 1;
 
-    while (left <= right) {
-        int mid = left + (right - left) / 2; // Menghindari overflow
-        if (arr[mid] == target) {
-            return mid; // Mengembalikan indeks jika ditemukan
-        } else if (arr[mid] < target) {
-            left = mid + 1; // Mencari di bagian kanan
-        } else {
-            right = mid - 1; // Mencari di bagian kiri
+void buildHuffmanCodes(Node* root, unordered_map<char, string>& huffmanCodes, string code) {
+    if (!root) return;
+    if (!root->left && !root->right) {
+        huffmanCodes[root->ch] = code;
+    }
+    buildHuffmanCodes(root->left, huffmanCodes, code + "0");
+    buildHuffmanCodes(root->right, huffmanCodes, code + "1");
+}
+
+
+string encode(const string& input, unordered_map<char, string>& huffmanCodes) {
+    string encodedStr = "";
+    for (char ch : input) {
+        encodedStr += huffmanCodes[ch];
+    }
+    return encodedStr;
+}
+
+
+string decode(Node* root, const string& encodedStr) {
+    string decodedStr = "";
+    Node* current = root;
+    for (char bit : encodedStr) {
+        current = (bit == '0') ? current->left : current->right;
+        if (!current->left && !current->right) {
+            decodedStr += current->ch;
+            current = root;
         }
     }
-    return -1; // Mengembalikan -1 jika tidak ditemukan
+    return decodedStr;
 }
 
 int main() {
-    // Menggunakan array biasa
-    int data[] = {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25};
-    int size = sizeof(data) / sizeof(data[0]);
-    int target = 23; //target pencarian
-	std::cout << "Muhammad Fadhil Rifky " << std::endl;
-	std::cout << "UAS Ganjil 2024/2025 " << std::endl;
-    // Menggunakan Linear Search
-    int linearResult = linearSearch(std::vector<int>(data, data + size), target);
-    if (linearResult != -1) {
-        std::cout << "Linear Search: Elemen " << target << " ditemukan di indeks " << linearResult << std::endl;
-    } else {
-        std::cout << "Linear Search: Elemen " << target << " tidak ditemukan." << std::endl;
+    cout << "MUHAMMAD FADHIL RIFKY: "<<endl;
+    string input;
+    cout << "Masukkan string untuk dikompresi: ";
+    cin >> input;
+    
+
+    Node* root = buildHuffmanTree(input);
+    unordered_map<char, string> huffmanCodes;
+    buildHuffmanCodes(root, huffmanCodes, "");
+
+    cout << "\nKode Huffman untuk setiap karakter:\n";
+    for (auto& pair : huffmanCodes) {
+        cout << pair.first << ": " << pair.second << endl;
     }
 
-    // Menggunakan Binary Search
-    // Pastikan data terurut sebelum menggunakan Binary Search
-    std::sort(data, data + size);
-    int binaryResult = binarySearch(std::vector<int>(data, data + size), target);
-    if (binaryResult != -1) {
-        std::cout << "Binary Search: Elemen " << target << " ditemukan di indeks " << binaryResult << std::endl;
-    } else {
-        std::cout << "Binary Search: Elemen " << target << " tidak ditemukan." << std::endl;
-    }
+    string encodedStr = encode(input, huffmanCodes);
+    cout << "\nString terkompresi: " << encodedStr << endl;
+
+    string decodedStr = decode(root, encodedStr);
+    cout << "String hasil dekompresi: " << decodedStr << endl;
 
     return 0;
 }
